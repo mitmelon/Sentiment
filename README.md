@@ -6,7 +6,7 @@ Sentiment is a sentiment classifier. It uses a model of words that are categoris
 ## Install:
 Use composer to install
 ```php
-composer require mitmelon/sentiment
+composer require mitmelon/sentiment:dev-master@dev
 ```
 
 ## Initialise :
