@@ -1,0 +1,27 @@
+{
+	"name": "mitmelon/sentiment",
+    "type": "library",
+    "description": "Sentiment is a sentiment classifier. It uses a model of words that are categorised as positive, negative or neutral, and a naive bayes algorithm to calculate sentiment. To improve accuracy, Sentiment removes 'noise' words.",
+    "keywords": ["sentiment", "text", "nlp", "ai", "algorithm", "sentiment analysis", "naive bayes"],
+    "homepage": "https://github.com/mitmelon/sentiment",
+    "license": "MIT",
+    "minimum-stability": "beta",
+    "authors": [
+        {
+            "name": "Mitnets Technologies"
+        }
+    ],
+    "require": {
+        "php": ">=7.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "Sentiment\\": 
+            [
+                "Sentiment/"
+            ]
+            
+        }
+    }
+}
+
