@@ -5,7 +5,7 @@
     "keywords": ["sentiment", "text", "nlp", "ai", "algorithm", "sentiment analysis", "naive bayes"],
     "homepage": "https://github.com/mitmelon/sentiment",
     "license": "MIT",
-    "minimum-stability": "beta",
+    "minimum-stability": "dev",
     "authors": [
         {
             "name": "Mitnets Technologies"

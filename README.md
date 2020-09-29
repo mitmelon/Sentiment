@@ -29,7 +29,7 @@ if (PHP_SAPI != 'cli') {
 $sentences = array('The boy is very bad', 'I love that girl', 'Some people said i need to take a nap');
 
 foreach ($sentences as $sentence) {
-	$scores = $sentiment->score($sentence);
+    $scores = $sentiment->score($sentence);
     $class = $sentiment->categorise($sentence);
 
 	// return:
