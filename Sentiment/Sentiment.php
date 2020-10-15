@@ -389,17 +389,43 @@ class Sentiment
             return 'Training data set must be an array.';
         }
     }
+    private function mbstring_binary_safe_encoding( $reset = false ) {
+        static $encodings  = array();
+        static $overloaded = null;
+     
+        if ( is_null( $overloaded ) ) {
+            $overloaded = function_exists( 'mb_internal_encoding' ) && ( ini_get( 'mbstring.func_overload' ) & 2 ); // phpcs:ignore PHPCompatibility.IniDirectives.RemovedIniDirectives.mbstring_func_overloadDeprecated
+        }
+     
+        if ( false === $overloaded ) {
+            return;
+        }
+     
+        if ( ! $reset ) {
+            $encoding = mb_internal_encoding();
+            array_push( $encodings, $encoding );
+            mb_internal_encoding( 'ISO-8859-1' );
+        }
+     
+        if ( $reset && $encodings ) {
+            $encoding = array_pop( $encodings );
+            mb_internal_encoding( $encoding );
+        }
+    }
+    private function reset_mbstring_encoding() {
+        $this->mbstring_binary_safe_encoding( true );
+    }
     /**
      * Checks to see if a string is utf8 encoded.
 	 * NOTE: This function checks for 5-Byte sequences, UTF8 has Bytes Sequences with a maximum length of 4.
 	 * @param string $str The string to be checked
 	 * @return bool True if $str fits a UTF-8 model, false otherwise.
 	 */
-    public function seems_utf8($str)
+    private function seems_utf8($str)
     {
-        mbstring_binary_safe_encoding();
+        $this->mbstring_binary_safe_encoding();
         $length = strlen($str);
-        reset_mbstring_encoding();
+        $this->reset_mbstring_encoding();
         for ($i=0; $i < $length; $i++) {
             $c = ord($str[$i]);
             if ($c < 0x80) {
@@ -618,54 +644,30 @@ class Sentiment
                 // grave accent
                 'Ǜ' => 'U', 'ǜ' => 'u',
                 );
-            // Used for locale-specific rules
-            $locale = get_locale();
-        
-            if ('de_DE' == $locale || 'de_DE_formal' == $locale || 'de_CH' == $locale || 'de_CH_informal' == $locale) {
-                $chars[ 'Ä' ] = 'Ae';
-                $chars[ 'ä' ] = 'ae';
-                $chars[ 'Ö' ] = 'Oe';
-                $chars[ 'ö' ] = 'oe';
-                $chars[ 'Ü' ] = 'Ue';
-                $chars[ 'ü' ] = 'ue';
-                $chars[ 'ß' ] = 'ss';
-            } elseif ('da_DK' === $locale) {
-                $chars[ 'Æ' ] = 'Ae';
-                $chars[ 'æ' ] = 'ae';
-                $chars[ 'Ø' ] = 'Oe';
-                $chars[ 'ø' ] = 'oe';
-                $chars[ 'Å' ] = 'Aa';
-                $chars[ 'å' ] = 'aa';
-            } elseif ('ca' === $locale) {
-                $chars[ 'l·l' ] = 'll';
-            } elseif ('sr_RS' === $locale || 'bs_BA' === $locale) {
-                $chars[ 'Đ' ] = 'DJ';
-                $chars[ 'đ' ] = 'dj';
+          
+                $string = strtr($string, $chars);
+            } else {
+                $chars = array();
+                // Assume ISO-8859-1 if not UTF-8
+                $chars['in'] = "\x80\x83\x8a\x8e\x9a\x9e"
+                        ."\x9f\xa2\xa5\xb5\xc0\xc1\xc2"
+                        ."\xc3\xc4\xc5\xc7\xc8\xc9\xca"
+                        ."\xcb\xcc\xcd\xce\xcf\xd1\xd2"
+                        ."\xd3\xd4\xd5\xd6\xd8\xd9\xda"
+                        ."\xdb\xdc\xdd\xe0\xe1\xe2\xe3"
+                        ."\xe4\xe5\xe7\xe8\xe9\xea\xeb"
+                        ."\xec\xed\xee\xef\xf1\xf2\xf3"
+                        ."\xf4\xf5\xf6\xf8\xf9\xfa\xfb"
+                        ."\xfc\xfd\xff";
+            
+                $chars['out'] = "EfSZszYcYuAAAAAACEEEEIIIINOOOOOOUUUUYaaaaaaceeeeiiiinoooooouuuuyy";
+            
+                $string = strtr($string, $chars['in'], $chars['out']);
+                $double_chars = array();
+                $double_chars['in'] = array("\x8c", "\x9c", "\xc6", "\xd0", "\xde", "\xdf", "\xe6", "\xf0", "\xfe");
+                $double_chars['out'] = array('OE', 'oe', 'AE', 'DH', 'TH', 'ss', 'ae', 'dh', 'th');
+                $string = str_replace($double_chars['in'], $double_chars['out'], $string);
             }
-        
-            $string = strtr($string, $chars);
-        } else {
-            $chars = array();
-            // Assume ISO-8859-1 if not UTF-8
-            $chars['in'] = "\x80\x83\x8a\x8e\x9a\x9e"
-                    ."\x9f\xa2\xa5\xb5\xc0\xc1\xc2"
-                    ."\xc3\xc4\xc5\xc7\xc8\xc9\xca"
-                    ."\xcb\xcc\xcd\xce\xcf\xd1\xd2"
-                    ."\xd3\xd4\xd5\xd6\xd8\xd9\xda"
-                    ."\xdb\xdc\xdd\xe0\xe1\xe2\xe3"
-                    ."\xe4\xe5\xe7\xe8\xe9\xea\xeb"
-                    ."\xec\xed\xee\xef\xf1\xf2\xf3"
-                    ."\xf4\xf5\xf6\xf8\xf9\xfa\xfb"
-                    ."\xfc\xfd\xff";
-        
-            $chars['out'] = "EfSZszYcYuAAAAAACEEEEIIIINOOOOOOUUUUYaaaaaaceeeeiiiinoooooouuuuyy";
-        
-            $string = strtr($string, $chars['in'], $chars['out']);
-            $double_chars = array();
-            $double_chars['in'] = array("\x8c", "\x9c", "\xc6", "\xd0", "\xde", "\xdf", "\xe6", "\xf0", "\xfe");
-            $double_chars['out'] = array('OE', 'oe', 'AE', 'DH', 'TH', 'ss', 'ae', 'dh', 'th');
-            $string = str_replace($double_chars['in'], $double_chars['out'], $string);
+            return $string;
         }
-        return $string;
     }
-}
